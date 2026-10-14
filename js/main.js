@@ -103,7 +103,10 @@ document.querySelector("#edit-details").addEventListener("click", () => {
 	document.querySelector("#first-name").focus();
 });
 
-phoneInput.addEventListener("input", () => phoneInput.removeAttribute("aria-invalid"));
+phoneInput.addEventListener("input", () => {
+	phoneInput.value = phoneInput.value.replace(/\D/g, "").slice(0, 10);
+	phoneInput.removeAttribute("aria-invalid");
+});
 codeInput.addEventListener("input", () => {
 	codeInput.value = codeInput.value.replace(/\D/g, "").slice(0, 6);
 	hideMessage(codeMessage);
