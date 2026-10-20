@@ -75,6 +75,7 @@ button, input { font: inherit; }
 .consent-row input { width: 20px; height: 20px; flex: 0 0 20px; margin: 0; accent-color: var(--teal); }
 .consent-row a { color: var(--teal); font-weight: 700; text-decoration-thickness: 1px; text-underline-offset: 2px; }
 .primary-button { display: flex; min-height: 56px; align-items: center; justify-content: center; gap: 12px; border: 0; border-radius: 11px; background: var(--accent); color: #fff; cursor: pointer; font-size: 16px; font-weight: 700; transition: background .18s, transform .18s; }
+.check-server-status{display:inline ; min-height: 20px; align-items: end; justify-content: center; gap: 12px; border: 0; border-radius: 5px; background: var(--accent); color: #fff; cursor: pointer; font-size: 16px; font-weight: 700;}
 .primary-button:hover { background: var(--accent-dark); }
 .primary-button:active { transform: translateY(1px); }
 .primary-button:focus-visible, .text-button:focus-visible { outline: 3px solid rgb(214 83 61 / 28%); outline-offset: 3px; }
