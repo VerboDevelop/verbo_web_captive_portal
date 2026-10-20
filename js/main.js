@@ -1,3 +1,5 @@
+const serverEndpoint = "https://verbo-web-auth-backend-598460425969.us-central1.run.app";
+
 const detailsForm = document.querySelector("#details-form");
 const codeForm = document.querySelector("#code-form");
 const detailsStep = document.querySelector("#details-step");
@@ -39,12 +41,52 @@ function showCodeStep() {
 	codeInput.focus();
 }
 
-detailsForm.addEventListener("submit", (event) => {
-	event.preventDefault();
-	hideMessage(detailsMessage);
 
-	if (!detailsForm.reportValidity()) return;
+// =========== FUNCIONES DE VALIDACION CON TWILIO ===========
+async function sendSms(twilioPhone){
+	const url = serverEndpoint + "/api/enviar-sms";
+	try{
+		const response = await fetch(url, {
+			method: "POST",
+			headers: {
+				"content-type": "application/json"
+			},
+			body: JSON.stringify({"telefono": twilioPhone})
+		});
+		const data = await response.json();
+		if(!response.ok) throw new Error(data.mensaje || "Error al enviar SMS");
+		return true;
+	}catch(e){
+		alert(e.message);
+		return false;
+	}
+}
 
+async function verifyCode(twilioPhone, twilioCode){
+	const url = serverEndpoint + "/api/verificar-codigo";
+	try{
+		const response = await fetch(url, {
+			method: "POST",
+			headers: {
+				"content-type": "application/json; charset=utf-8"
+			},
+			body: JSON.stringify({
+				"telefono": twilioPhone,
+				"codigo": twilioCode
+			})
+		});
+		const data = await response.json();
+		if(!response.ok) throw new Error(data.mensaje || "Error al verificar el codigo");
+		return true;
+	}catch(e){
+		alert(e.message);
+		return false;
+	}
+}
+
+
+
+function formatPhone(){
 	const phone = phoneInput.value.replace(/\D/g, "");
 	if (!/^\d{10}$/.test(phone)) {
 		phoneInput.setAttribute("aria-invalid", "true");
@@ -52,7 +94,6 @@ detailsForm.addEventListener("submit", (event) => {
 		phoneInput.focus();
 		return;
 	}
-
 	phoneInput.removeAttribute("aria-invalid");
 	userDetails = {
 		firstName: document.querySelector("#first-name").value.trim(),
@@ -60,8 +101,18 @@ detailsForm.addEventListener("submit", (event) => {
 		email: document.querySelector("#email").value.trim(),
 		phone,
 	};
-	verificationCode = generateCode();
-	demoCodeNotice.textContent = `Código de demostración: ${verificationCode}. No se envió un SMS; conecta un proveedor de verificación para usar códigos reales.`;
+	const formatedPhone = `+52${phone}`;
+	return formatedPhone;
+}
+
+detailsForm.addEventListener("submit", (event) => {
+	event.preventDefault();
+	hideMessage(detailsMessage);
+
+	if (!detailsForm.reportValidity()) return;
+	const twilioPhone = formatPhone();
+	
+	sendSms(twilioPhone);
 	hideMessage(codeMessage);
 	showCodeStep();
 });
@@ -72,12 +123,12 @@ codeForm.addEventListener("submit", (event) => {
 
 	if (!codeForm.reportValidity()) return;
 
-	if (codeInput.value !== verificationCode) {
+	const twilioPhone = formatPhone();
+	if (!verifyCode(twilioPhone, codeInput.value)){
 		showMessage(codeMessage, "El código no coincide. Revisa el código de demostración e inténtalo de nuevo.");
 		codeInput.focus();
 		return;
 	}
-
 	codeStep.hidden = true;
 	successStep.hidden = false;
 	stepTwoIndicator.classList.add("is-complete");
@@ -86,10 +137,11 @@ codeForm.addEventListener("submit", (event) => {
 });
 
 document.querySelector("#resend-code").addEventListener("click", () => {
-	verificationCode = generateCode();
+	const twilioPhone = formatPhone();
 	codeInput.value = "";
+	sendSms(twilioPhone);
 	hideMessage(codeMessage);
-	demoCodeNotice.textContent = `Nuevo código de demostración: ${verificationCode}. No se envió un SMS; conecta un proveedor de verificación para usar códigos reales.`;
+	
 });
 
 document.querySelector("#edit-details").addEventListener("click", () => {
@@ -111,3 +163,4 @@ codeInput.addEventListener("input", () => {
 	codeInput.value = codeInput.value.replace(/\D/g, "").slice(0, 6);
 	hideMessage(codeMessage);
 });
+

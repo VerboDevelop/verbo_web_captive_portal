@@ -1,31 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#172653" />
     <title>Verifica tu identidad</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
     <script src="js/main.js" defer></script>
-  </head>
-  <body>
+</head>
+<body>
     <main class="verification-layout">
       <header class="site-header">
         <a class="brand" href="#top" aria-label="Verbo, inicio">
           <span class="brand-mark" aria-hidden="true">v</span>
           <span>verbo</span>
         </a>
-        <span class="secure-label"><span aria-hidden="true">●</span> Verificación segura</span>
+        <span class="secure-label"
+          ><span aria-hidden="true">●</span> Verificación segura</span
+        >
       </header>
 
       <section class="workflow" id="top" aria-label="Verificación de identidad">
         <div class="form-shell">
           <div class="progress" aria-label="Progreso de verificación">
             <div class="progress-item">
-              <span class="progress-step is-active" id="step-indicator-1" aria-current="step">1</span>
+              <span
+                class="progress-step is-active"
+                id="step-indicator-1"
+                aria-current="step"
+                >1</span
+              >
               <span class="progress-label">Tus datos</span>
             </div>
             <span class="progress-line" aria-hidden="true"></span>
@@ -38,74 +48,154 @@
           <section id="details-step" class="step-panel">
             <p class="step-label">PASO 1 <span>/</span> 2</p>
             <h1>Empecemos por conocerte.</h1>
-            <p class="form-intro">Escribe tus datos tal como aparecen en tus documentos.</p>
+            <p class="form-intro">
+              Escribe tus datos tal como aparecen en tus documentos.
+            </p>
 
             <form id="details-form" novalidate>
               <div class="field-grid">
                 <label class="field">
                   <span>Nombre</span>
-                  <input id="first-name" name="firstName" type="text" placeholder="Ej. María" autocomplete="given-name" required />
+                  <input
+                    id="first-name"
+                    name="firstName"
+                    type="text"
+                    placeholder="Ej. María"
+                    autocomplete="given-name"
+                    required
+                  />
                 </label>
                 <label class="field">
                   <span>Apellidos</span>
-                  <input id="last-name" name="lastName" type="text" placeholder="Ej. González" autocomplete="family-name" required />
+                  <input
+                    id="last-name"
+                    name="lastName"
+                    type="text"
+                    placeholder="Ej. González"
+                    autocomplete="family-name"
+                    required
+                  />
                 </label>
               </div>
 
               <label class="field">
                 <span>Correo electrónico</span>
-                <input id="email" name="email" type="email" placeholder="nombre@correo.com" autocomplete="email" required />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="nombre@correo.com"
+                  autocomplete="email"
+                  required
+                />
               </label>
 
               <label class="field">
                 <span>Número de teléfono</span>
                 <span class="phone-control">
-                  <span class="country-code" aria-label="Código de país México">🇲🇽 <span>+52</span></span>
-                  <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="55 1234 5678" minlength="10" maxlength="10" pattern="[0-9]{10}" aria-describedby="phone-hint" required />
+                  <span class="country-code" aria-label="Código de país México"
+                    >🇲🇽 <span>+52</span></span
+                  >
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    inputmode="numeric"
+                    autocomplete="tel-national"
+                    placeholder="55 1234 5678"
+                    minlength="10"
+                    maxlength="10"
+                    pattern="[0-9]{10}"
+                    aria-describedby="phone-hint"
+                    required
+                  />
                 </span>
-                <span class="field-hint" id="phone-hint">Ingresa los 10 dígitos de tu número mexicano.</span>
+                <span class="field-hint" id="phone-hint"
+                  >Ingresa los 10 dígitos de tu número mexicano.</span
+                >
               </label>
 
               <label class="consent-row">
                 <input id="consent" name="consent" type="checkbox" required />
-                <span>Confirmo que los datos son correctos y acepto la <a href="#privacy">política de privacidad</a>.</span>
+                <span
+                  >Confirmo que los datos son correctos y acepto la
+                  <a href="#privacy">política de privacidad</a>.</span
+                >
               </label>
 
-              <p class="form-message" id="details-message" role="alert" aria-live="polite" hidden></p>
-              <button class="primary-button" type="submit">Verificar mis datos <span aria-hidden="true">→</span></button>
+              <p
+                class="form-message"
+                id="details-message"
+                role="alert"
+                aria-live="polite"
+                hidden
+              ></p>
+              <button class="primary-button" type="submit">
+                Verificar mis datos <span aria-hidden="true">→</span>
+              </button>
             </form>
           </section>
 
           <section id="code-step" class="step-panel" hidden>
             <p class="step-label">PASO 2 <span>/</span> 2</p>
             <h2>Ingresa tu código</h2>
-            <p class="form-intro">Escribe el código de 6 dígitos para confirmar tu número <strong id="phone-summary"></strong>.</p>
+            <p class="form-intro">
+              Escribe el código de 6 dígitos para confirmar tu número
+              <strong id="phone-summary"></strong>.
+            </p>
 
             <form id="code-form" novalidate>
               <label class="field code-field">
                 <span>Código de verificación</span>
-                <input id="verification-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" minlength="6" maxlength="6" pattern="[0-9]{6}" aria-describedby="code-hint" required />
-                <span class="field-hint" id="code-hint">En esta demostración, el código aparece en el aviso de abajo.</span>
+                <input
+                  id="verification-code"
+                  name="code"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  placeholder="000000"
+                  minlength="6"
+                  maxlength="6"
+                  pattern="[0-9]{6}"
+                  aria-describedby="code-hint"
+                  required
+                />
               </label>
-              <p class="form-message" id="code-message" role="status" aria-live="polite" hidden></p>
-              <button class="primary-button" type="submit">Confirmar código <span aria-hidden="true">→</span></button>
+              <p
+                class="form-message"
+                id="code-message"
+                role="status"
+                aria-live="polite"
+                hidden
+              ></p>
+              <button class="primary-button" type="submit">
+                Confirmar código <span aria-hidden="true">→</span>
+              </button>
             </form>
             <div class="code-actions">
-              <button class="text-button" id="resend-code" type="button">Generar otro código</button>
-              <button class="text-button" id="edit-details" type="button">← Corregir mis datos</button>
+              <button class="text-button" id="resend-code" type="button">
+                Generar otro código
+              </button>
+              <button class="text-button" id="edit-details" type="button">
+                ← Corregir mis datos
+              </button>
             </div>
-            <div class="demo-notice" id="demo-code" role="status" aria-live="polite"></div>
+          
           </section>
 
           <section id="success-step" class="step-panel success-panel" hidden>
             <span class="success-icon" aria-hidden="true">✓</span>
             <p class="step-label">VERIFICACIÓN COMPLETADA</p>
             <h2>Gracias, <span id="verified-name"></span></h2>
-            <p class="form-intro">Tus datos quedaron confirmados en esta demostración.</p>
+            <p class="form-intro">
+              Tus datos quedaron confirmados en esta demostración.
+            </p>
           </section>
         </div>
       </section>
-      <footer class="page-footer">Tus datos se protegen y se usan únicamente para verificar tu identidad.</footer>
+      <footer class="page-footer">
+        Tus datos se protegen y se usan únicamente para verificar tu identidad.
+      </footer>
     </main>
   </body>
 </html>
