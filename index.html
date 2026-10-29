@@ -12,7 +12,6 @@
         rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
-    <script src="js/main.js" defer></script>
 </head>
 <body>
     <main class="verification-layout">
@@ -66,12 +65,23 @@
                   />
                 </label>
                 <label class="field">
-                  <span>Apellidos</span>
+                  <span>Apellido Paterno</span>
                   <input
-                    id="last-name"
-                    name="lastName"
+                    id="last-name1"
+                    name="lastName1"
                     type="text"
                     placeholder="Ej. González"
+                    autocomplete="family-name"
+                    required
+                  />
+                </label>
+                <label class="field">
+                  <span>Apellido Materno</span>
+                  <input
+                    id="last-name2"
+                    name="lastName2"
+                    type="text"
+                    placeholder="Ej. Martinez"
                     autocomplete="family-name"
                     required
                   />
@@ -94,7 +104,7 @@
                 <span>Número de teléfono</span>
                 <span class="phone-control">
                   <span class="country-code" aria-label="Código de país México"
-                    >🇲🇽 <span>+52</span></span
+                    >🇲🇽 <span id="prefix">+52</span></span
                   >
                   <input
                     id="phone"
@@ -119,9 +129,16 @@
                 <input id="consent" name="consent" type="checkbox" required />
                 <span
                   >Confirmo que los datos son correctos y acepto la
-                  <a href="#privacy">política de privacidad</a>.</span
-                >
+                  <a href="#" id="open-policy">política de privacidad</a>.</span>
               </label>
+
+              <dialog id="policy-modal">
+
+                <div id="policy-content">Cargando...</div>
+                <br>
+                <button type="button" id="close-policy" class="text-button">Enterado / Cerrar</button>
+              </dialog>
+
 
               <p
                 class="form-message"
@@ -188,14 +205,15 @@
             <p class="step-label">VERIFICACIÓN COMPLETADA</p>
             <h2>Gracias, <span id="verified-name"></span></h2>
             <p class="form-intro">
-              Tus datos quedaron confirmados en esta demostración.
+              Tus datos quedaron confirmados.
             </p>
           </section>
         </div>
       </section>
       <footer class="page-footer">
-        Tus datos se protegen y se usan únicamente para verificar tu identidad.
+        Tus datos se protegen y se usan conforme a los terminos y condiciones aceptados en la politica de privacidad.
       </footer>
     </main>
+    <script type="module" src="js/main.js"></script>
   </body>
 </html>
