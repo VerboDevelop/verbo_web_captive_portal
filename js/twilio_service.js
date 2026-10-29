@@ -1,7 +1,6 @@
-const serverEndpoint = "http://127.0.0.1:8080";
 
 // =========== FUNCIONES DE VALIDACION CON TWILIO ===========
-export async function sendSms(twilioPhone){
+export async function sendSms(serverEndpoint, twilioPhone){
 	const url = serverEndpoint + "/api/enviar-sms";
 	try{
 		const response = await fetch(url, {
@@ -15,12 +14,12 @@ export async function sendSms(twilioPhone){
 		if(!response.ok) throw new Error(data.mensaje || "Error al enviar SMS");
 		return true;
 	}catch(e){
-		alert(e.message);
+		console.error(e.message);
 		return false;
 	}
 }
 
-export async function verifyCode(userDetails){
+export async function verifyCode(serverEndpoint, userDetails){
 	const url = serverEndpoint + "/api/verificar-codigo";
 	try{
 		const response = await fetch(url, {
@@ -43,7 +42,7 @@ export async function verifyCode(userDetails){
 		if(!response.ok) throw new Error(data.mensaje || "Error al verificar el codigo");
 		return true;
 	}catch(e){
-		alert(e.message);
+		console.error(e.message);
 		return false;
 	}
 }
