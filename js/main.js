@@ -2,6 +2,11 @@ import {sendSms, verifyCode} from "./twilio_service.js";
 import {getPolicyVersion, openPrivacyPolicy} from "./privacy_policy.js";
 const serverEndpoint = "https://verbo-web-auth-backend-598460425969.us-central1.run.app";
 
+const params = new URLSearchParams(window.location.search);
+if(params.has("challenge") && params.has("md")){
+	sessionStorage.setItem("hotspot_url", window.location.href);
+}
+
 document.addEventListener("DOMContentLoaded", async() => {
 	const policyVersion = await getPolicyVersion(serverEndpoint);
 	openPrivacyPolicy(policyVersion);
@@ -70,7 +75,6 @@ document.addEventListener("DOMContentLoaded", async() => {
 	detailsForm.addEventListener("submit", (event) => {
 		event.preventDefault();
 		hideMessage(detailsMessage);
-
 		if (!detailsForm.reportValidity()) return;
 		if(consentInput.value !== "on") return;
 		const phone = formatPhone(phoneInput);
@@ -98,9 +102,20 @@ document.addEventListener("DOMContentLoaded", async() => {
 		if (!codeForm.reportValidity()) return;
 		userDetails.codigo = codeInput.value.trim();
 		const verifyResult = await verifyCode(serverEndpoint, userDetails);
-		if (!verifyResult){
+
+		if (!verifyResult.ok){
 			showMessage(codeMessage, "El código no coincide. Revisa el código e inténtalo de nuevo.");
 			codeInput.focus();
+			return;
+		}
+
+		try{
+			sessionStorage.removeItem("hotspot_url");
+			sessionStorage.setItem("verified_name", userDetails.nombre);
+		}catch{
+			codeForm.querySelector("button[type=submit]").disabled = true;
+			showMessage(codeMessage, "Conectando a la red…");
+			window.location.replace(verifyResult.loginUrl);
 			return;
 		}
 		codeStep.hidden = true;
