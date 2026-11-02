@@ -11,11 +11,11 @@ export async function sendSms(serverEndpoint, twilioPhone){
 			body: JSON.stringify({"telefono": twilioPhone})
 		});
 		const data = await response.json();
-		if(!response.ok) throw new Error(data.mensaje || "Error al enviar SMS");
-		return true;
+		if(!data.ok) throw new Error(data.mensaje || "Error al enviar SMS");
+		return data;
 	}catch(e){
 		console.error(e.message);
-		return false;
+		return {ok: false};
 	}
 }
 
