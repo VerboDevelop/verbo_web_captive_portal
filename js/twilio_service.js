@@ -11,11 +11,11 @@ export async function sendSms(serverEndpoint, twilioPhone){
 			body: JSON.stringify({"telefono": twilioPhone})
 		});
 		const data = await response.json();
-		if(!response.ok) throw new Error(data.mensaje || "Error al enviar SMS");
-		return true;
+		if(!data.ok) throw new Error(data.mensaje || "Error al enviar SMS");
+		return data;
 	}catch(e){
 		console.error(e.message);
-		return false;
+		return {ok: false};
 	}
 }
 
@@ -35,14 +35,12 @@ export async function verifyCode(serverEndpoint, userDetails){
 				"telefono": userDetails.telefono,
 				"codigo": userDetails.codigo,
                 "acepto_aviso": userDetails.acepto_aviso,
-                "version_aviso": userDetails.version_aviso
+                "version_aviso": userDetails.version_aviso,
+				"hotspot_url": sessionStorage.getItem("hotspot_url")
 			})
 		});
-		const data = await response.json();
-		if(!response.ok) throw new Error(data.mensaje || "Error al verificar el codigo");
-		return true;
-	}catch(e){
-		console.error(e.message);
-		return false;
+		return await response.json();
+	}catch{
+		return {ok: false, mensaje: "No pudimos conectar con el servidor. Inténtalo de nuevo."};
 	}
 }

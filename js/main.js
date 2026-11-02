@@ -2,9 +2,12 @@ import {sendSms, verifyCode} from "./twilio_service.js";
 import {getPolicyVersion, openPrivacyPolicy} from "./privacy_policy.js";
 const serverEndpoint = "https://verbo-web-auth-backend-598460425969.us-central1.run.app";
 
+const params = new URLSearchParams(window.location.search);
+if(params.has("challenge") && params.has("md")){
+	sessionStorage.setItem("hotspot_url", window.location.href);
+}
+
 document.addEventListener("DOMContentLoaded", async() => {
-	const policyVersion = await getPolicyVersion(serverEndpoint);
-	openPrivacyPolicy(policyVersion);
 
 	const detailsForm = document.querySelector("#details-form");
 	const codeForm = document.querySelector("#code-form");
@@ -25,26 +28,6 @@ document.addEventListener("DOMContentLoaded", async() => {
 	const phoneInput = document.querySelector("#phone");
 	const codeInput = document.querySelector("#verification-code");
 	const consentInput = document.querySelector("#consent");
-
-	// Bandera para evitar multiples envios de codigo desde formulario
-	let codeWasSent = false;
-
-	function formatPhone(){
-		const phone = phoneInput.value.replace(/\D/g, "");
-		if (!/^\d{10}$/.test(phone)) {
-			phoneInput.setAttribute("aria-invalid", "true");
-			showMessage(detailsMessage, "Ingresa un número mexicano válido de exactamente 10 dígitos.");
-			phoneInput.focus();
-			return;
-		}
-		phoneInput.removeAttribute("aria-invalid");
-		const formatedPhone = `+52${phone}`;
-		return formatedPhone;
-	}
-
-	let userDetails = {
-		telefono: ""
-	};
 
 	function showMessage(element, message) {
 		element.textContent = message;
@@ -67,15 +50,72 @@ document.addEventListener("DOMContentLoaded", async() => {
 		codeInput.focus();
 	}
 
-	detailsForm.addEventListener("submit", (event) => {
+	function showSuccessStep(nombre){
+		detailsStep.hidden = true;
+		codeStep.hidden = true;
+		successStep.hidden = false;
+		stepOneIndicator.classList.add("is-complete");
+		stepOneIndicator.removeAttribute("aria-current");
+		stepTwoIndicator.classList.remove("is-active");
+		stepTwoIndicator.classList.add("is-complete");
+		stepTwoIndicator.removeAttribute("aria-current");
+		document.querySelector("#verified-name").textContent = nombre;
+	}
+
+	function formatPhone(){
+		const phone = phoneInput.value.replace(/\D/g, "");
+		if (!/^\d{10}$/.test(phone)) {
+			phoneInput.setAttribute("aria-invalid", "true");
+			showMessage(detailsMessage, "Ingresa un número mexicano válido de exactamente 10 dígitos.");
+			phoneInput.focus();
+			return;
+		}
+		phoneInput.removeAttribute("aria-invalid");
+		const formatedPhone = `+52${phone}`;
+		return formatedPhone;
+	}
+
+	if(params.get("estado") === "conectado"){
+			let nombre = "";
+			try{
+				nombre = sessionStorage.getItem("verified_name") ?? "";
+				sessionStorage.removeItem("verified_name");
+			}catch{}
+			detailsStep.hidden = true;
+			codeStep.hidden = true;
+			successStep.hidden = false;
+			stepOneIndicator.classList.add("is-complete");
+			stepTwoIndicator.classList.add("is-complete");
+			stepTwoIndicator.removeAttribute("aria-current");
+			document.querySelector("#verified-name").textContent = nombre;
+	}
+
+	if(params.get("res") === "failed") showMessage(detailsMessage, "No pudimos conectarte. Desconéctate del WiFi y vuelve a conectarte.");
+
+	const policyVersion = await getPolicyVersion(serverEndpoint);
+	openPrivacyPolicy(policyVersion);
+
+	// Bandera para evitar multiples envios de codigo desde formulario
+	let codeWasSent = false;
+
+	// Estructura para almacenar los datos del usuario y el código de verificación
+	let userDetails = {
+		telefono: ""
+	};
+
+	detailsForm.addEventListener("submit", async (event) => {
 		event.preventDefault();
 		hideMessage(detailsMessage);
-
 		if (!detailsForm.reportValidity()) return;
-		if(consentInput.value !== "on") return;
-		const phone = formatPhone(phoneInput);
+		if (!consentInput.checked) return;
+		const phone = formatPhone();
+		if(!phone) return;
 		if(!codeWasSent || (!userDetails.telefono || phone !== userDetails.telefono)){
-			sendSms(serverEndpoint, phone);
+			const smsResult = await sendSms(serverEndpoint, phone);
+			if(!smsResult.ok){
+				showMessage(detailsMessage, smsResult.mensaje || "No pudimos enviar el código. Inténtalo de nuevo.");
+				return;
+			}
 			codeWasSent = true;
 		}
 			userDetails = {
@@ -84,8 +124,9 @@ document.addEventListener("DOMContentLoaded", async() => {
 			apellido_materno: lastname2Input.value.trim(),
 			correo: emailInput.value.trim(),
 			telefono: phone,
-			acepto_aviso: document.querySelector("#consent").value === "on" ? true : false,
-			version_aviso: policyVersion
+			acepto_aviso: document.querySelector("#consent").checked,
+			version_aviso: policyVersion,
+			hotspot_url: sessionStorage.getItem("hotspot_url")
 		};
 		hideMessage(codeMessage);
 		showCodeStep();
@@ -97,17 +138,28 @@ document.addEventListener("DOMContentLoaded", async() => {
 
 		if (!codeForm.reportValidity()) return;
 		userDetails.codigo = codeInput.value.trim();
+		console.log(userDetails);
 		const verifyResult = await verifyCode(serverEndpoint, userDetails);
-		if (!verifyResult){
-			showMessage(codeMessage, "El código no coincide. Revisa el código e inténtalo de nuevo.");
+
+		if (!verifyResult.ok){
+			showMessage(codeMessage, verifyResult.mensaje || "Código incorrecto. Inténtalo de nuevo.");
 			codeInput.focus();
 			return;
 		}
-		codeStep.hidden = true;
-		successStep.hidden = false;
-		stepTwoIndicator.classList.add("is-complete");
-		stepTwoIndicator.removeAttribute("aria-current");
-		document.querySelector("#verified-name").textContent = userDetails.nombre;
+
+		try{
+			sessionStorage.removeItem("hotspot_url");
+			sessionStorage.setItem("verified_name", userDetails.nombre);
+		}catch{}
+
+		if(verifyResult.loginUrl){
+			codeForm.querySelector("button[type=submit]").disabled = true;
+			showMessage(codeMessage, "Conectando a la red…");
+			window.location.replace(verifyResult.loginUrl);
+			return;
+		}
+
+		showSuccessStep(userDetails.nombre);
 	});
 
 	resendButton.addEventListener("click", () => {
