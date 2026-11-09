@@ -1,7 +1,8 @@
 import {sendSms, verifyCode} from "./twilio_service.js";
 import {getPolicyVersion, openPrivacyPolicy} from "./privacy_policy.js";
 import {consultAccess} from "./acl_service.js";
-const serverEndpoint = "https://verbo-web-auth-backend-598460425969.us-central1.run.app";
+//const serverEndpoint = "https://verbo-web-auth-backend-598460425969.us-central1.run.app";
+const serverEndpoint = "http://localhost:8080"
 const params = new URLSearchParams(window.location.search);
 if(params.has("challenge") && params.has("md")){
 	sessionStorage.setItem("hotspot_url", window.location.href);
@@ -92,6 +93,7 @@ document.addEventListener("DOMContentLoaded", async() => {
 	}
 
 	if(params.get("res") === "failed") showMessage(detailsMessage, "No pudimos conectarte. Desconéctate del WiFi y vuelve a conectarte.");
+
 
 	const access = await consultAccess(serverEndpoint, sessionStorage.getItem("hotspot_url"));
 	if(!access.ok) showMessage(detailsMessage, access.mensaje);
