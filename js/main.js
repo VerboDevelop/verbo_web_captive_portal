@@ -1,8 +1,7 @@
 import {sendSms, verifyCode} from "./twilio_service.js";
 import {getPolicyVersion, openPrivacyPolicy} from "./privacy_policy.js";
 import {consultAccess} from "./acl_service.js";
-//const serverEndpoint = "https://verbo-web-auth-backend-598460425969.us-central1.run.app";
-const serverEndpoint = "http://localhost:8080"
+const serverEndpoint = "https://verbo-web-auth-backend-598460425969.us-central1.run.app";
 const params = new URLSearchParams(window.location.search);
 if(params.has("challenge") && params.has("md")){
 	sessionStorage.setItem("hotspot_url", window.location.href);
