@@ -30,6 +30,8 @@ document.addEventListener("DOMContentLoaded", async() => {
 	const codeInput = document.querySelector("#verification-code");
 	const consentInput = document.querySelector("#consent");
 
+	waitStep.hidden = true;
+
 	function showMessage(element, message) {
 		element.textContent = message;
 		element.hidden = false;
@@ -93,21 +95,34 @@ document.addEventListener("DOMContentLoaded", async() => {
 
 	if(params.get("res") === "failed") showMessage(detailsMessage, "No pudimos conectarte. Desconéctate del WiFi y vuelve a conectarte.");
 
+	let policyVersion;
+	const vieneDelHotspot = params.has("challenge") && params.has("md");
+	const access = vieneDelHotspot
+		? await consultAccess(serverEndpoint, sessionStorage.getItem("hotspot_url"))
+		: null;
 
-	const access = await consultAccess(serverEndpoint, sessionStorage.getItem("hotspot_url"));
-	if(!access.ok) showMessage(detailsMessage, access.mensaje);
-	if(!access.data.ok){
+	if(!access){
+    	if(params.get("estado") !== "conectado") showMessage(detailsMessage, "Conéctate a la red WiFi y abre el portal desde ahí para continuar.");
+	}else if(!access.ok){
+		showMessage(detailsMessage, access.mensaje);
+	}else if(access.data.codigo === "ACCESO_EN_ESPERA"){
 		detailsStep.hidden = true;
 		codeStep.hidden = true;
 		successStep.hidden = true;
 		waitStep.hidden = false;
-		document.querySelector("#wait-title").textContent = access.data.reingreso ? "Tiempo de sesion agotado" : "Sesion de telefono activa";
+		document.querySelector("#wait-title").textContent = access.data.reingreso ? "Tiempo de sesión agotado" : "Número con acceso registrado";
 		document.querySelector("#wait-message").textContent = access.data.mensaje;
+	}else if(!access.data.ok){
+		showMessage(detailsMessage, access.data.mensaje);
+	}else if(access.data.loginUrl){
+		if(params.get("res") !== "failed"){
+			sessionStorage.removeItem("hotspot_url");
+			window.location.replace(access.data.loginUrl);
+		}
+	}else{
+		policyVersion = await getPolicyVersion(serverEndpoint);
+		openPrivacyPolicy(policyVersion);
 	}
-	if(access.data.loginUrl) window.location.replace(access.loginUrl);
-
-	const policyVersion = await getPolicyVersion(serverEndpoint);
-	openPrivacyPolicy(policyVersion);
 
 	let codeWasSent = false;
 
@@ -150,7 +165,6 @@ document.addEventListener("DOMContentLoaded", async() => {
 
 		if (!codeForm.reportValidity()) return;
 		userDetails.codigo = codeInput.value.trim();
-		console.log(userDetails);
 		const verifyResult = await verifyCode(serverEndpoint, userDetails);
 
 		if (!verifyResult.ok){

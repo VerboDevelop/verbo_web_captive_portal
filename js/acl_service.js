@@ -10,7 +10,7 @@ export async function consultAccess(serverEndpoint, hotspot_url){
 				"hotspot_url": hotspot_url
 			})
         });
-        const data = await response;
+        const data = await response.json();
         return {ok: true, data: data};
     }catch{
         return{ok: false, mensaje: "Servicio no disponible, accede en otro momento"};
