@@ -1,7 +1,7 @@
 import {sendSms, verifyCode} from "./twilio_service.js";
 import {getPolicyVersion, openPrivacyPolicy} from "./privacy_policy.js";
+import {consultAccess} from "./acl_service.js";
 const serverEndpoint = "https://verbo-web-auth-backend-598460425969.us-central1.run.app";
-
 const params = new URLSearchParams(window.location.search);
 if(params.has("challenge") && params.has("md")){
 	sessionStorage.setItem("hotspot_url", window.location.href);
@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", async() => {
 	const detailsStep = document.querySelector("#details-step");
 	const codeStep = document.querySelector("#code-step");
 	const successStep = document.querySelector("#success-step");
+	const waitStep = document.querySelector("#wait-step");
 	const detailsMessage = document.querySelector("#details-message");
 	const codeMessage = document.querySelector("#code-message");
 	const stepOneIndicator = document.querySelector("#step-indicator-1");
@@ -92,13 +93,23 @@ document.addEventListener("DOMContentLoaded", async() => {
 
 	if(params.get("res") === "failed") showMessage(detailsMessage, "No pudimos conectarte. Desconéctate del WiFi y vuelve a conectarte.");
 
+	const access = await consultAccess(serverEndpoint, sessionStorage.getItem("hotspot_url"));
+	if(!access.ok) showMessage(detailsMessage, access.mensaje);
+	if(!access.data.ok){
+		detailsStep.hidden = true;
+		codeStep.hidden = true;
+		successStep.hidden = true;
+		waitStep.hidden = false;
+		document.querySelector("#wait-title").textContent = access.data.reingreso ? "Tiempo de sesion agotado" : "Sesion de telefono activa";
+		document.querySelector("#wait-message").textContent = access.data.mensaje;
+	}
+	if(access.data.loginUrl) window.location.replace(access.loginUrl);
+
 	const policyVersion = await getPolicyVersion(serverEndpoint);
 	openPrivacyPolicy(policyVersion);
 
-	// Bandera para evitar multiples envios de codigo desde formulario
 	let codeWasSent = false;
 
-	// Estructura para almacenar los datos del usuario y el código de verificación
 	let userDetails = {
 		telefono: ""
 	};
@@ -111,7 +122,7 @@ document.addEventListener("DOMContentLoaded", async() => {
 		const phone = formatPhone();
 		if(!phone) return;
 		if(!codeWasSent || (!userDetails.telefono || phone !== userDetails.telefono)){
-			const smsResult = await sendSms(serverEndpoint, phone);
+			const smsResult = await sendSms(serverEndpoint, phone, sessionStorage.getItem("hotspot_url"));
 			if(!smsResult.ok){
 				showMessage(detailsMessage, smsResult.mensaje || "No pudimos enviar el código. Inténtalo de nuevo.");
 				return;
