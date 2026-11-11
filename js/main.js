@@ -30,11 +30,6 @@ document.addEventListener("DOMContentLoaded", async() => {
 	const codeInput = document.querySelector("#verification-code");
 	const consentInput = document.querySelector("#consent");
 
-	detailsStep.hidden = false;
-	codeStep.hidden = true;
-	successStep.hidden = true;
-	waitStep.hidden = true;
-
 	function showMessage(element, message) {
 		element.textContent = message;
 		element.hidden = false;
