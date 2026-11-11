@@ -1,6 +1,6 @@
 
 // =========== FUNCIONES DE VALIDACION CON TWILIO ===========
-export async function sendSms(serverEndpoint, twilioPhone){
+export async function sendSms(serverEndpoint, twilioPhone, hotspot_url){
 	const url = serverEndpoint + "/api/enviar-sms";
 	try{
 		const response = await fetch(url, {
@@ -8,7 +8,10 @@ export async function sendSms(serverEndpoint, twilioPhone){
 			headers: {
 				"content-type": "application/json"
 			},
-			body: JSON.stringify({"telefono": twilioPhone})
+			body: JSON.stringify({
+				"telefono": twilioPhone,
+				"hotspot_url": hotspot_url
+			})
 		});
 		const data = await response.json();
 		if(!data.ok) throw new Error(data.mensaje || "Error al enviar SMS");

@@ -1,7 +1,7 @@
 import {sendSms, verifyCode} from "./twilio_service.js";
 import {getPolicyVersion, openPrivacyPolicy} from "./privacy_policy.js";
+import {consultAccess} from "./acl_service.js";
 const serverEndpoint = "https://verbo-web-auth-backend-598460425969.us-central1.run.app";
-
 const params = new URLSearchParams(window.location.search);
 if(params.has("challenge") && params.has("md")){
 	sessionStorage.setItem("hotspot_url", window.location.href);
@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", async() => {
 	const detailsStep = document.querySelector("#details-step");
 	const codeStep = document.querySelector("#code-step");
 	const successStep = document.querySelector("#success-step");
+	const waitStep = document.querySelector("#wait-step");
 	const detailsMessage = document.querySelector("#details-message");
 	const codeMessage = document.querySelector("#code-message");
 	const stepOneIndicator = document.querySelector("#step-indicator-1");
@@ -28,6 +29,8 @@ document.addEventListener("DOMContentLoaded", async() => {
 	const phoneInput = document.querySelector("#phone");
 	const codeInput = document.querySelector("#verification-code");
 	const consentInput = document.querySelector("#consent");
+
+	waitStep.hidden = true;
 
 	function showMessage(element, message) {
 		element.textContent = message;
@@ -92,13 +95,37 @@ document.addEventListener("DOMContentLoaded", async() => {
 
 	if(params.get("res") === "failed") showMessage(detailsMessage, "No pudimos conectarte. Desconéctate del WiFi y vuelve a conectarte.");
 
-	const policyVersion = await getPolicyVersion(serverEndpoint);
-	openPrivacyPolicy(policyVersion);
+	let policyVersion;
+	const vieneDelHotspot = params.has("challenge") && params.has("md");
+	const access = vieneDelHotspot
+		? await consultAccess(serverEndpoint, sessionStorage.getItem("hotspot_url"))
+		: null;
 
-	// Bandera para evitar multiples envios de codigo desde formulario
+	if(!access){
+    	if(params.get("estado") !== "conectado") showMessage(detailsMessage, "Conéctate a la red WiFi y abre el portal desde ahí para continuar.");
+	}else if(!access.ok){
+		showMessage(detailsMessage, access.mensaje);
+	}else if(access.data.codigo === "ACCESO_EN_ESPERA"){
+		detailsStep.hidden = true;
+		codeStep.hidden = true;
+		successStep.hidden = true;
+		waitStep.hidden = false;
+		document.querySelector("#wait-title").textContent = access.data.reingreso ? "Tiempo de sesión agotado" : "Número con acceso registrado";
+		document.querySelector("#wait-message").textContent = access.data.mensaje;
+	}else if(!access.data.ok){
+		showMessage(detailsMessage, access.data.mensaje);
+	}else if(access.data.loginUrl){
+		if(params.get("res") !== "failed"){
+			sessionStorage.removeItem("hotspot_url");
+			window.location.replace(access.data.loginUrl);
+		}
+	}else{
+		policyVersion = await getPolicyVersion(serverEndpoint);
+		openPrivacyPolicy(policyVersion);
+	}
+
 	let codeWasSent = false;
 
-	// Estructura para almacenar los datos del usuario y el código de verificación
 	let userDetails = {
 		telefono: ""
 	};
@@ -111,7 +138,7 @@ document.addEventListener("DOMContentLoaded", async() => {
 		const phone = formatPhone();
 		if(!phone) return;
 		if(!codeWasSent || (!userDetails.telefono || phone !== userDetails.telefono)){
-			const smsResult = await sendSms(serverEndpoint, phone);
+			const smsResult = await sendSms(serverEndpoint, phone, sessionStorage.getItem("hotspot_url"));
 			if(!smsResult.ok){
 				showMessage(detailsMessage, smsResult.mensaje || "No pudimos enviar el código. Inténtalo de nuevo.");
 				return;
@@ -138,7 +165,6 @@ document.addEventListener("DOMContentLoaded", async() => {
 
 		if (!codeForm.reportValidity()) return;
 		userDetails.codigo = codeInput.value.trim();
-		console.log(userDetails);
 		const verifyResult = await verifyCode(serverEndpoint, userDetails);
 
 		if (!verifyResult.ok){

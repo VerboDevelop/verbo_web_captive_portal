@@ -25,7 +25,7 @@ export async function openPrivacyPolicy(policyVersion){
             const result = await fetch(`privacy_polices/${policyVersion}.html`);
             if(!result.ok) throw new Error("No se pudo cargar el archivo. Intentalo mas tarde");
             const policyText = await result.text();
-            content.innerHTML = policyText;
+            content.innerHTML = `<div class="p-wrapper">${policyText}</div>`;
             modal.showModal();
         }catch(e){
             content.innerHTML = `<p style="color:red;">Error al cargar el aviso de privacidad.</p>`;

@@ -83,7 +83,6 @@
                     type="text"
                     placeholder="Ej. Martinez"
                     autocomplete="family-name"
-                    required
                   />
                 </label>
               </div>
@@ -200,6 +199,14 @@
           
           </section>
 
+          <section id="wait-step" class="step-panel success-panel" hidden>
+            <span class="wait-icon" aria-hidden="true">🛑⌛</span>
+            <p class="step-label">ACCESO EN ESPERA</p>
+            <h2 id="wait-title"></h2>
+            <p id="wait-message" class="form-intro">
+            </p>
+          </section>
+
           <section id="success-step" class="step-panel success-panel" hidden>
             <span class="success-icon" aria-hidden="true">✓</span>
             <p class="step-label">VERIFICACIÓN COMPLETADA</p>
@@ -208,6 +215,7 @@
               Tus datos quedaron confirmados.
             </p>
           </section>
+
         </div>
       </section>
       <footer class="page-footer">
