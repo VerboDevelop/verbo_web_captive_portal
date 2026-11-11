@@ -30,7 +30,10 @@ document.addEventListener("DOMContentLoaded", async() => {
 	const codeInput = document.querySelector("#verification-code");
 	const consentInput = document.querySelector("#consent");
 
-	waitStep.hidden = true;
+	codeStep.hidden = true;
+    detailsStep.hidden = true;
+    successStep.hidden = false;
+    waitStep.hidden = true;
 
 	function showMessage(element, message) {
 		element.textContent = message;
@@ -95,7 +98,7 @@ document.addEventListener("DOMContentLoaded", async() => {
 
 	if(params.get("res") === "failed") showMessage(detailsMessage, "No pudimos conectarte. Desconéctate del WiFi y vuelve a conectarte.");
 
-	let policyVersion;
+	/*let policyVersion;
 	const vieneDelHotspot = params.has("challenge") && params.has("md");
 	const access = vieneDelHotspot
 		? await consultAccess(serverEndpoint, sessionStorage.getItem("hotspot_url"))
@@ -122,7 +125,7 @@ document.addEventListener("DOMContentLoaded", async() => {
 	}else{
 		policyVersion = await getPolicyVersion(serverEndpoint);
 		openPrivacyPolicy(policyVersion);
-	}
+	}*/
 
 	let codeWasSent = false;
 
