@@ -133,6 +133,29 @@ document.addEventListener("DOMContentLoaded", async() => {
 		telefono: ""
 	};
 
+	async function completeAccess(messageElement, submitButton){
+		submitButton.disabled = true;
+		const verifyResult = await verifyCode(serverEndpoint, userDetails);
+		if(!verifyResult.ok){
+			submitButton.disabled = false;
+			showMessage(messageElement, verifyResult.mensaje || "No pudimos completar tu acceso. Inténtalo de nuevo.");
+			return false;
+		}
+		try{
+			sessionStorage.removeItem("hotspot_url");
+			sessionStorage.setItem("verified_name", userDetails.nombre);
+			if(!userDetails.codigo) sessionStorage.setItem("mensaje", verifyResult.mensaje);
+		}catch{}
+		if(verifyResult.loginUrl){
+			showMessage(messageElement, "Conectando a la red…");
+			window.location.replace(verifyResult.loginUrl);
+			return true;
+		}
+		submitButton.disabled = false;
+		showSuccessStep(userDetails.nombre);
+		return true;
+	}
+
 	detailsForm.addEventListener("submit", async (event) => {
 		event.preventDefault();
 		hideMessage(detailsMessage);
@@ -140,24 +163,39 @@ document.addEventListener("DOMContentLoaded", async() => {
 		if (!consentInput.checked) return;
 		const phone = formatPhone();
 		if(!phone) return;
+		const submitButton = detailsForm.querySelector("button[type=submit]");
+
+		let sinCodigo = false;
 		if(!codeWasSent || (!userDetails.telefono || phone !== userDetails.telefono)){
+			submitButton.disabled = true;
 			const smsResult = await sendSms(serverEndpoint, phone, sessionStorage.getItem("hotspot_url"));
+			submitButton.disabled = false;
 			if(!smsResult.ok){
 				showMessage(detailsMessage, smsResult.mensaje || "No pudimos enviar el código. Inténtalo de nuevo.");
 				return;
 			}
-			codeWasSent = true;
+			if(smsResult.loginUrl){
+				try{ sessionStorage.removeItem("hotspot_url"); }catch{}
+				window.location.replace(smsResult.loginUrl);
+				return;
+			}
+			sinCodigo = smsResult.requiereCodigo === false;
+			codeWasSent = !sinCodigo;
 		}
-			userDetails = {
+		userDetails = {
 			nombre: nameInput.value.trim(),
 			apellido_paterno: lastname1Input.value.trim(),
 			apellido_materno: lastname2Input.value.trim(),
 			correo: emailInput.value.trim(),
 			telefono: phone,
-			acepto_aviso: document.querySelector("#consent").checked,
+			acepto_aviso: consentInput.checked,
 			version_aviso: policyVersion,
 			hotspot_url: sessionStorage.getItem("hotspot_url")
 		};
+		if(sinCodigo){
+			await completeAccess(detailsMessage, submitButton);
+			return;
+		}
 		hideMessage(codeMessage);
 		showCodeStep();
 	});
@@ -165,36 +203,24 @@ document.addEventListener("DOMContentLoaded", async() => {
 	codeForm.addEventListener("submit", async (event) => {
 		event.preventDefault();
 		hideMessage(codeMessage);
-
 		if (!codeForm.reportValidity()) return;
 		userDetails.codigo = codeInput.value.trim();
-		const verifyResult = await verifyCode(serverEndpoint, userDetails);
-
-		if (!verifyResult.ok){
-			showMessage(codeMessage, verifyResult.mensaje || "Código incorrecto. Inténtalo de nuevo.");
-			codeInput.focus();
-			return;
-		}
-
-		try{
-			sessionStorage.removeItem("hotspot_url");
-			sessionStorage.setItem("verified_name", userDetails.nombre);
-		}catch{}
-
-		if(verifyResult.loginUrl){
-			codeForm.querySelector("button[type=submit]").disabled = true;
-			showMessage(codeMessage, "Conectando a la red…");
-			window.location.replace(verifyResult.loginUrl);
-			return;
-		}
-
-		showSuccessStep(userDetails.nombre);
+		const ok = await completeAccess(codeMessage, codeForm.querySelector("button[type=submit]"));
+		if(!ok) codeInput.focus();
 	});
 
-	resendButton.addEventListener("click", () => {
+	resendButton.addEventListener("click", async () => {
 		codeInput.value = "";
-		sendSms(serverEndpoint, userDetails.telefono);
 		hideMessage(codeMessage);
+		const smsResult = await sendSms(serverEndpoint, userDetails.telefono, sessionStorage.getItem("hotspot_url"));
+		if(!smsResult.ok){
+			showMessage(codeMessage, smsResult.mensaje || "No pudimos reenviar el código. Inténtalo de nuevo.");
+			return;
+		}
+		if(smsResult.loginUrl){
+			window.location.replace(smsResult.loginUrl);
+			return;
+		}
 
 		let timeOff = 60;
 		const originalText = resendButton.textContent;

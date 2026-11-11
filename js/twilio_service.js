@@ -13,12 +13,9 @@ export async function sendSms(serverEndpoint, twilioPhone, hotspot_url){
 				"hotspot_url": hotspot_url
 			})
 		});
-		const data = await response.json();
-		if(!data.ok) throw new Error(data.mensaje || "Error al enviar SMS");
-		return data;
-	}catch(e){
-		console.error(e.message);
-		return {ok: false};
+		return await response.json();
+	}catch{
+		return {ok: false, mensaje: "No pudimos conectar con el servidor. Inténtalo de nuevo."};
 	}
 }
 
