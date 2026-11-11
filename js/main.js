@@ -1,113 +1,211 @@
-const detailsForm = document.querySelector("#details-form");
-const codeForm = document.querySelector("#code-form");
-const detailsStep = document.querySelector("#details-step");
-const codeStep = document.querySelector("#code-step");
-const successStep = document.querySelector("#success-step");
-const detailsMessage = document.querySelector("#details-message");
-const codeMessage = document.querySelector("#code-message");
-const demoCodeNotice = document.querySelector("#demo-code");
-const phoneInput = document.querySelector("#phone");
-const codeInput = document.querySelector("#verification-code");
-const stepOneIndicator = document.querySelector("#step-indicator-1");
-const stepTwoIndicator = document.querySelector("#step-indicator-2");
+import {sendSms, verifyCode} from "./twilio_service.js";
+import {getPolicyVersion, openPrivacyPolicy} from "./privacy_policy.js";
+const serverEndpoint = "https://verbo-web-auth-backend-598460425969.us-central1.run.app";
 
-let verificationCode = "";
-let userDetails;
-
-function showMessage(element, message) {
-	element.textContent = message;
-	element.hidden = false;
+const params = new URLSearchParams(window.location.search);
+if(params.has("challenge") && params.has("md")){
+	sessionStorage.setItem("hotspot_url", window.location.href);
 }
 
-function hideMessage(element) {
-	element.textContent = "";
-	element.hidden = true;
-}
+document.addEventListener("DOMContentLoaded", async() => {
 
-function generateCode() {
-	return String(Math.floor(100000 + Math.random() * 900000));
-}
+	const detailsForm = document.querySelector("#details-form");
+	const codeForm = document.querySelector("#code-form");
+	const detailsStep = document.querySelector("#details-step");
+	const codeStep = document.querySelector("#code-step");
+	const successStep = document.querySelector("#success-step");
+	const detailsMessage = document.querySelector("#details-message");
+	const codeMessage = document.querySelector("#code-message");
+	const stepOneIndicator = document.querySelector("#step-indicator-1");
+	const stepTwoIndicator = document.querySelector("#step-indicator-2");
+	const resendButton = document.querySelector("#resend-code");
 
-function showCodeStep() {
-	detailsStep.hidden = true;
-	codeStep.hidden = false;
-	stepOneIndicator.classList.add("is-complete");
-	stepOneIndicator.removeAttribute("aria-current");
-	stepTwoIndicator.classList.add("is-active");
-	stepTwoIndicator.setAttribute("aria-current", "step");
-	document.querySelector("#phone-summary").textContent = `+52 ${userDetails.phone}`;
-	codeInput.focus();
-}
+	// ========== DATOS INGRESADOS EN FORMULARIO ===========
+	const nameInput = document.querySelector("#first-name");
+	const lastname1Input = document.querySelector("#last-name1");
+	const lastname2Input = document.querySelector("#last-name2");
+	const emailInput = document.querySelector("#email");
+	const phoneInput = document.querySelector("#phone");
+	const codeInput = document.querySelector("#verification-code");
+	const consentInput = document.querySelector("#consent");
 
-detailsForm.addEventListener("submit", (event) => {
-	event.preventDefault();
-	hideMessage(detailsMessage);
-
-	if (!detailsForm.reportValidity()) return;
-
-	const phone = phoneInput.value.replace(/\D/g, "");
-	if (!/^\d{10}$/.test(phone)) {
-		phoneInput.setAttribute("aria-invalid", "true");
-		showMessage(detailsMessage, "Ingresa un número mexicano válido de exactamente 10 dígitos.");
-		phoneInput.focus();
-		return;
+	function showMessage(element, message) {
+		element.textContent = message;
+		element.hidden = false;
 	}
 
-	phoneInput.removeAttribute("aria-invalid");
-	userDetails = {
-		firstName: document.querySelector("#first-name").value.trim(),
-		lastName: document.querySelector("#last-name").value.trim(),
-		email: document.querySelector("#email").value.trim(),
-		phone,
-	};
-	verificationCode = generateCode();
-	demoCodeNotice.textContent = `Código de demostración: ${verificationCode}. No se envió un SMS; conecta un proveedor de verificación para usar códigos reales.`;
-	hideMessage(codeMessage);
-	showCodeStep();
-});
+	function hideMessage(element) {
+		element.textContent = "";
+		element.hidden = true;
+	}
 
-codeForm.addEventListener("submit", (event) => {
-	event.preventDefault();
-	hideMessage(codeMessage);
-
-	if (!codeForm.reportValidity()) return;
-
-	if (codeInput.value !== verificationCode) {
-		showMessage(codeMessage, "El código no coincide. Revisa el código de demostración e inténtalo de nuevo.");
+	function showCodeStep() {
+		detailsStep.hidden = true;
+		codeStep.hidden = false;
+		stepOneIndicator.classList.add("is-complete");
+		stepOneIndicator.removeAttribute("aria-current");
+		stepTwoIndicator.classList.add("is-active");
+		stepTwoIndicator.setAttribute("aria-current", "step");
+		document.querySelector("#phone-summary").textContent = `${userDetails.telefono}`;
 		codeInput.focus();
-		return;
 	}
 
-	codeStep.hidden = true;
-	successStep.hidden = false;
-	stepTwoIndicator.classList.add("is-complete");
-	stepTwoIndicator.removeAttribute("aria-current");
-	document.querySelector("#verified-name").textContent = userDetails.firstName;
-});
+	function showSuccessStep(nombre){
+		detailsStep.hidden = true;
+		codeStep.hidden = true;
+		successStep.hidden = false;
+		stepOneIndicator.classList.add("is-complete");
+		stepOneIndicator.removeAttribute("aria-current");
+		stepTwoIndicator.classList.remove("is-active");
+		stepTwoIndicator.classList.add("is-complete");
+		stepTwoIndicator.removeAttribute("aria-current");
+		document.querySelector("#verified-name").textContent = nombre;
+	}
 
-document.querySelector("#resend-code").addEventListener("click", () => {
-	verificationCode = generateCode();
-	codeInput.value = "";
-	hideMessage(codeMessage);
-	demoCodeNotice.textContent = `Nuevo código de demostración: ${verificationCode}. No se envió un SMS; conecta un proveedor de verificación para usar códigos reales.`;
-});
+	function formatPhone(){
+		const phone = phoneInput.value.replace(/\D/g, "");
+		if (!/^\d{10}$/.test(phone)) {
+			phoneInput.setAttribute("aria-invalid", "true");
+			showMessage(detailsMessage, "Ingresa un número mexicano válido de exactamente 10 dígitos.");
+			phoneInput.focus();
+			return;
+		}
+		phoneInput.removeAttribute("aria-invalid");
+		const formatedPhone = `+52${phone}`;
+		return formatedPhone;
+	}
 
-document.querySelector("#edit-details").addEventListener("click", () => {
-	codeStep.hidden = true;
-	detailsStep.hidden = false;
-	stepOneIndicator.classList.remove("is-complete");
-	stepOneIndicator.setAttribute("aria-current", "step");
-	stepTwoIndicator.classList.remove("is-active");
-	stepTwoIndicator.removeAttribute("aria-current");
-	hideMessage(detailsMessage);
-	document.querySelector("#first-name").focus();
-});
+	if(params.get("estado") === "conectado"){
+			let nombre = "";
+			try{
+				nombre = sessionStorage.getItem("verified_name") ?? "";
+				sessionStorage.removeItem("verified_name");
+			}catch{}
+			detailsStep.hidden = true;
+			codeStep.hidden = true;
+			successStep.hidden = false;
+			stepOneIndicator.classList.add("is-complete");
+			stepTwoIndicator.classList.add("is-complete");
+			stepTwoIndicator.removeAttribute("aria-current");
+			document.querySelector("#verified-name").textContent = nombre;
+	}
 
-phoneInput.addEventListener("input", () => {
-	phoneInput.value = phoneInput.value.replace(/\D/g, "").slice(0, 10);
-	phoneInput.removeAttribute("aria-invalid");
-});
-codeInput.addEventListener("input", () => {
-	codeInput.value = codeInput.value.replace(/\D/g, "").slice(0, 6);
-	hideMessage(codeMessage);
-});
+	if(params.get("res") === "failed") showMessage(detailsMessage, "No pudimos conectarte. Desconéctate del WiFi y vuelve a conectarte.");
+
+	const policyVersion = await getPolicyVersion(serverEndpoint);
+	openPrivacyPolicy(policyVersion);
+
+	// Bandera para evitar multiples envios de codigo desde formulario
+	let codeWasSent = false;
+
+	// Estructura para almacenar los datos del usuario y el código de verificación
+	let userDetails = {
+		telefono: ""
+	};
+
+	detailsForm.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		hideMessage(detailsMessage);
+		if (!detailsForm.reportValidity()) return;
+		if (!consentInput.checked) return;
+		const phone = formatPhone();
+		if(!phone) return;
+		if(!codeWasSent || (!userDetails.telefono || phone !== userDetails.telefono)){
+			const smsResult = await sendSms(serverEndpoint, phone);
+			if(!smsResult.ok){
+				showMessage(detailsMessage, smsResult.mensaje || "No pudimos enviar el código. Inténtalo de nuevo.");
+				return;
+			}
+			codeWasSent = true;
+		}
+			userDetails = {
+			nombre: nameInput.value.trim(),
+			apellido_paterno: lastname1Input.value.trim(),
+			apellido_materno: lastname2Input.value.trim(),
+			correo: emailInput.value.trim(),
+			telefono: phone,
+			acepto_aviso: document.querySelector("#consent").checked,
+			version_aviso: policyVersion,
+			hotspot_url: sessionStorage.getItem("hotspot_url")
+		};
+		hideMessage(codeMessage);
+		showCodeStep();
+	});
+
+	codeForm.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		hideMessage(codeMessage);
+
+		if (!codeForm.reportValidity()) return;
+		userDetails.codigo = codeInput.value.trim();
+		console.log(userDetails);
+		const verifyResult = await verifyCode(serverEndpoint, userDetails);
+
+		if (!verifyResult.ok){
+			showMessage(codeMessage, verifyResult.mensaje || "Código incorrecto. Inténtalo de nuevo.");
+			codeInput.focus();
+			return;
+		}
+
+		try{
+			sessionStorage.removeItem("hotspot_url");
+			sessionStorage.setItem("verified_name", userDetails.nombre);
+		}catch{}
+
+		if(verifyResult.loginUrl){
+			codeForm.querySelector("button[type=submit]").disabled = true;
+			showMessage(codeMessage, "Conectando a la red…");
+			window.location.replace(verifyResult.loginUrl);
+			return;
+		}
+
+		showSuccessStep(userDetails.nombre);
+	});
+
+	resendButton.addEventListener("click", () => {
+		codeInput.value = "";
+		sendSms(serverEndpoint, userDetails.telefono);
+		hideMessage(codeMessage);
+
+		let timeOff = 60;
+		const originalText = resendButton.textContent;
+
+		resendButton.disabled = true;
+		resendButton.textContent = `Volver a enviar en (${timeOff}s)`;
+
+		const countDown = setInterval(() => {
+			timeOff--;
+			if (timeOff > 0){
+				resendButton.textContent = `Volver a enviar en (${timeOff}s)`;
+			}
+			else{
+				clearInterval(countDown);
+				resendButton.disabled = false;
+				resendButton.textContent = originalText;
+			}
+		}, 1000);
+	});
+
+	document.querySelector("#edit-details").addEventListener("click", () => {
+		codeStep.hidden = true;
+		detailsStep.hidden = false;
+		stepOneIndicator.classList.remove("is-complete");
+		stepOneIndicator.setAttribute("aria-current", "step");
+		stepTwoIndicator.classList.remove("is-active");
+		stepTwoIndicator.removeAttribute("aria-current");
+		hideMessage(detailsMessage);
+		document.querySelector("#first-name").focus();
+	});
+
+	phoneInput.addEventListener("input", () => {
+		phoneInput.value = phoneInput.value.replace(/\D/g, "").slice(0, 10);
+		phoneInput.removeAttribute("aria-invalid");
+	});
+	codeInput.addEventListener("input", () => {
+		codeInput.value = codeInput.value.replace(/\D/g, "").slice(0, 6);
+		hideMessage(codeMessage);
+	});
+})
+
+
+
