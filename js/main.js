@@ -30,10 +30,10 @@ document.addEventListener("DOMContentLoaded", async() => {
 	const codeInput = document.querySelector("#verification-code");
 	const consentInput = document.querySelector("#consent");
 
+	detailsStep.hidden = true;
 	codeStep.hidden = true;
-    detailsStep.hidden = true;
-    successStep.hidden = false;
-    waitStep.hidden = true;
+	successStep.hidden = false;
+	waitStep.hidden = true;
 
 	function showMessage(element, message) {
 		element.textContent = message;
@@ -82,23 +82,27 @@ document.addEventListener("DOMContentLoaded", async() => {
 	}
 
 	if(params.get("estado") === "conectado"){
-			let nombre = "";
-			try{
-				nombre = sessionStorage.getItem("verified_name") ?? "";
-				sessionStorage.removeItem("verified_name");
-			}catch{}
-			detailsStep.hidden = true;
-			codeStep.hidden = true;
-			successStep.hidden = false;
-			stepOneIndicator.classList.add("is-complete");
-			stepTwoIndicator.classList.add("is-complete");
-			stepTwoIndicator.removeAttribute("aria-current");
-			document.querySelector("#verified-name").textContent = nombre;
+		let nombre = "";
+		let mensaje = "";
+		try{
+			nombre = sessionStorage.getItem("verified_name") ?? "";
+			sessionStorage.removeItem("verified_name");
+			mensaje = sessionStorage.getItem("mensaje") ?? "";
+			sessionStorage.removeItem("mensaje");
+		}catch{}
+		detailsStep.hidden = true;
+		codeStep.hidden = true;
+		successStep.hidden = false;
+		stepOneIndicator.classList.add("is-complete");
+		stepTwoIndicator.classList.add("is-complete");
+		stepTwoIndicator.removeAttribute("aria-current");
+		if(mensaje.length) document.querySelector("#success-title").textContent = mensaje;
+		document.querySelector("#verified-name").textContent = nombre;
 	}
 
 	if(params.get("res") === "failed") showMessage(detailsMessage, "No pudimos conectarte. Desconéctate del WiFi y vuelve a conectarte.");
 
-	/*let policyVersion;
+	let policyVersion;
 	const vieneDelHotspot = params.has("challenge") && params.has("md");
 	const access = vieneDelHotspot
 		? await consultAccess(serverEndpoint, sessionStorage.getItem("hotspot_url"))
@@ -120,12 +124,13 @@ document.addEventListener("DOMContentLoaded", async() => {
 	}else if(access.data.loginUrl){
 		if(params.get("res") !== "failed"){
 			sessionStorage.removeItem("hotspot_url");
+			sessionStorage.setItem("mensaje", access.data.mensaje);
 			window.location.replace(access.data.loginUrl);
 		}
 	}else{
 		policyVersion = await getPolicyVersion(serverEndpoint);
 		openPrivacyPolicy(policyVersion);
-	}*/
+	}
 
 	let codeWasSent = false;
 
